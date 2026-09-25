@@ -1,7 +1,6 @@
 function headers(env) {
   return {
     apikey: env.SUPABASE_SECRET_KEY,
-    Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
     "Content-Type": "application/json"
   };
 }
