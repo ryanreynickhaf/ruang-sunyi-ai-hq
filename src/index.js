@@ -125,10 +125,19 @@ function dashboard() {
     if (json) h['Content-Type'] = 'application/json';
     return h;
   }
-  function saveToken() {
-    localStorage.setItem('rs_hq_token', tokenEl.value.trim());
-    document.getElementById('authStatus').textContent = 'Token tersimpan di browser ini.';
-    loadSummary();
+  async function saveToken() {
+    const v = tokenEl.value.trim();
+    localStorage.setItem('rs_hq_token', v);
+    const s = document.getElementById('authStatus');
+    try {
+      await api('/auth-check');
+      s.textContent = 'Token benar. Terautentikasi sebagai Owner.';
+      await loadSummary();
+    } catch(e) {
+      s.textContent = e.message === 'unauthorized'
+        ? 'ADMIN_TOKEN tidak cocok dengan Secret di Cloudflare.'
+        : 'Gagal memeriksa token: ' + e.message;
+    }
   }
   function clearToken() {
     localStorage.removeItem('rs_hq_token');
@@ -190,7 +199,10 @@ function dashboard() {
       }).join('');
     } catch(e) {
       box.innerHTML = '<p class="bad">Tidak bisa membaca task: ' + escapeHtml(e.message) + '</p>';
-      document.getElementById('authStatus').textContent = 'Belum terautentikasi / token salah.';
+      document.getElementById('authStatus').textContent =
+        e.message === 'unauthorized'
+          ? 'ADMIN_TOKEN tidak cocok dengan Secret di Cloudflare.'
+          : 'Token diterima, tetapi backend/database error: ' + e.message;
     }
   }
   function escapeHtml(v='') {
@@ -255,6 +267,9 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/") return dashboard();
     if (url.pathname === "/health") return json({ ok: true, service: "ruang-sunyi-ai-hq", agents: Object.keys(AGENTS) });
+    if (url.pathname === "/auth-check") {
+      return authorized(request, env) ? json({ ok: true, authenticated: true }) : json({ ok: false, authenticated: false, error: "unauthorized" }, 401);
+    }
     if (!authorized(request, env)) return json({ error: "unauthorized" }, 401);
 
     if (request.method === "POST" && url.pathname === "/tasks") {
