@@ -1,0 +1,4 @@
+SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+SUPABASE_SECRET_KEY=sb_secret_xxx
+OPENROUTER_API_KEY=sk-or-v1-xxx
+ADMIN_TOKEN=change-this-long-random-token
