@@ -177,14 +177,17 @@ function dashboard() {
       const rows = await api('/summary');
       document.getElementById('authStatus').textContent = 'Terhubung ke backend.';
       if (!rows.length) { box.innerHTML = '<p class="muted">Belum ada task.</p>'; return; }
-      box.innerHTML = rows.map(t => `
-        <div class="task">
-          <h3>${escapeHtml(t.title)} — ${escapeHtml(t.agent)}</h3>
-          <div><span class="status">${escapeHtml(t.status)}</span> · Level ${t.authority_level}</div>
-          ${t.result ? '<pre>' + escapeHtml(t.result) + '</pre>' : ''}
-          ${t.error ? '<pre class="bad">' + escapeHtml(t.error) + '</pre>' : ''}
-          ${t.status === 'waiting_approval' ? '<div class="row"><button class="approve" onclick="approve(\'' + t.id + '\')">Approve</button></div>' : ''}
-        </div>`).join('');
+      box.innerHTML = rows.map(function(t) {
+        return '<div class="task">' +
+          '<h3>' + escapeHtml(t.title) + ' — ' + escapeHtml(t.agent) + '</h3>' +
+          '<div><span class="status">' + escapeHtml(t.status) + '</span> · Level ' + t.authority_level + '</div>' +
+          (t.result ? '<pre>' + escapeHtml(t.result) + '</pre>' : '') +
+          (t.error ? '<pre class="bad">' + escapeHtml(t.error) + '</pre>' : '') +
+          (t.status === 'waiting_approval'
+            ? '<div class="row"><button class="approve" onclick="approve(&quot;' + t.id + '&quot;)">Approve</button></div>'
+            : '') +
+          '</div>';
+      }).join('');
     } catch(e) {
       box.innerHTML = '<p class="bad">Tidak bisa membaca task: ' + escapeHtml(e.message) + '</p>';
       document.getElementById('authStatus').textContent = 'Belum terautentikasi / token salah.';
