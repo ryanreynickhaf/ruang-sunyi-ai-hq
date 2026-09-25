@@ -224,7 +224,20 @@ async function processTask(env, task) {
 
   await updateTask(env, task.id, { status: "running", started_at: new Date().toISOString() });
   try {
-    const result = await runAI(env, task);
+    let taskForAI = task;
+    if (task.agent === "kim") {
+      const hqRows = await getDailySummary(env);
+      taskForAI = {
+        ...task,
+        prompt:
+          task.prompt +
+          "\n\n[HQ INTERNAL TASK CONTEXT - VERIFIED FROM SUPABASE]\n" +
+          JSON.stringify(hqRows || []) +
+          "\n[END HQ INTERNAL TASK CONTEXT]\n" +
+          "Use this internal task context when the request asks about current HQ work. Do not claim access to systems not represented in this context."
+      };
+    }
+    const result = await runAI(env, taskForAI);
     await updateTask(env, task.id, {
       status: "completed",
       result: result.text,
