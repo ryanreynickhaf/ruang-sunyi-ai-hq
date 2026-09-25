@@ -273,22 +273,32 @@ export default {
     if (!authorized(request, env)) return json({ error: "unauthorized" }, 401);
 
     if (request.method === "POST" && url.pathname === "/tasks") {
-      const body = await request.json();
-      if (!AGENTS[body.agent]) return json({ error: "unknown agent" }, 400);
-      const level = Number(body.authority_level ?? 1);
-      if (!Number.isInteger(level) || level < 0 || level > 4) return json({ error: "authority_level must be 0..4" }, 400);
-      const rows = await createTask(env, {
-        agent: body.agent,
-        title: body.title || "Untitled task",
-        prompt: body.prompt,
-        authority_level: level,
-        status: level > Number(env.MAX_AUTONOMOUS_LEVEL || 2) ? "waiting_approval" : "pending",
-        source: body.source || "api"
-      });
-      return json(rows?.[0] || rows, 201);
+      try {
+        const body = await request.json();
+        if (!AGENTS[body.agent]) return json({ error: "unknown agent" }, 400);
+        const level = Number(body.authority_level ?? 1);
+        if (!Number.isInteger(level) || level < 0 || level > 4) return json({ error: "authority_level must be 0..4" }, 400);
+        const rows = await createTask(env, {
+          agent: body.agent,
+          title: body.title || "Untitled task",
+          prompt: body.prompt,
+          authority_level: level,
+          status: level > Number(env.MAX_AUTONOMOUS_LEVEL || 2) ? "waiting_approval" : "pending",
+          source: body.source || "api"
+        });
+        return json(rows?.[0] || rows, 201);
+      } catch (error) {
+        return json({ error: String(error) }, 500);
+      }
     }
 
-    if (request.method === "POST" && url.pathname === "/run") return json({ processed: await drainQueue(env, 5) });
+    if (request.method === "POST" && url.pathname === "/run") {
+      try {
+        return json({ processed: await drainQueue(env, 5) });
+      } catch (error) {
+        return json({ error: String(error) }, 500);
+      }
+    }
 
     const approve = url.pathname.match(/^\/tasks\/([^/]+)\/approve$/);
     if (request.method === "POST" && approve) {
@@ -299,7 +309,13 @@ export default {
     }
 
     if (request.method === "GET" && url.pathname === "/agents") return json(AGENTS);
-    if (request.method === "GET" && url.pathname === "/summary") return json(await getDailySummary(env));
+    if (request.method === "GET" && url.pathname === "/summary") {
+      try {
+        return json(await getDailySummary(env));
+      } catch (error) {
+        return json({ error: String(error) }, 500);
+      }
+    }
     return json({ error: "not found" }, 404);
   },
 
