@@ -17,7 +17,7 @@ export async function runAI(env, task) {
       temperature: 0.2,
       messages: [
         { role: "system", content: agent.system },
-        { role: "system", content: `Authority level: ${task.authority_level}. Do not pretend to execute external actions. Return operationally useful JSON or concise text.` },
+        { role: "system", content: `Authority level: ${task.authority_level}. Verified runtime facts for this request: the Cloudflare Worker is actively executing this task, the task was successfully read from the Supabase queue, and the AI provider request is currently being processed. You may state those facts as verified. Do not claim the status of any other external system unless evidence is provided. Do not pretend to execute external actions. Return operationally useful JSON or concise text.` },
         { role: "user", content: task.prompt }
       ]
     })
